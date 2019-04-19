@@ -32,6 +32,7 @@
 
 <a name="introduction"></a>
 ## 介绍
+[可以参考-文档描述得更加细](https://laravelacademy.org/post/9745.html)
 
 在 Laravel 中，实现基于传统表单的登陆和授权已经非常简单，但是如何满足 API 场景下的授权需求呢？在 API 场景里通常通过令牌来实现用户授权，而非维护请求之间的 Session 状态。在 Laravel 项目中使用 Passport 可以轻而易举地实现 API 授权认证，Passport 可以在几分钟之内为你的应用程序提供完整的 OAuth2 服务端实现。Passport 是基于由 [Alex Bilbie](https://github.com/alexbilbie) 维护的 [League OAuth2 server](https://github.com/thephpleague/oauth2-server) 建立的。
 
@@ -53,6 +54,9 @@ Passport 服务提供器使用框架注册自己的数据库迁移目录，因�
     php artisan migrate
 
 > {note} 如果你不打算使用 Passport 的默认迁移，你应该在 `AppServiceProvider` 的 `register` 方法中调用 `Passport::ignoreMigrations` 方法。 你可以用这个命令 `php artisan vendor:publish --tag=passport-migrations` 导出默认迁移。
+
+>>执行这句话会出现: Key path "路径\oath-private.key" does not exist or is not readable.解决此问题：网上建议,执行`php artisan passport:keys` 测试后，还是会出此提示，最后解决的办法用：openssl 生成公钥和私钥，然后复制到/storage/下面。命名oauth-private.key和oauth-public.key
+
 
 接下来，运行 `passport:install` 命令来创建生成安全访问令牌时所需的加密密钥，同时，这条命令也会创建用于生成访问令牌的「个人访问」客户端和「密码授权」客户端：
 
@@ -136,7 +140,7 @@ Passport 配备了一些可以让你的用户自行创建客户端和个人访�
 
     Vue.component(
         'passport-clients',
-        require('./components/passport/Clients.vue')
+        require('./components/passport/Clients.vue').
     );
 
     Vue.component(
@@ -149,11 +153,24 @@ Passport 配备了一些可以让你的用户自行创建客户端和个人访�
         require('./components/passport/PersonalAccessTokens.vue')
     );
 
-这些组件注册后，运行 `npm install`安装vue所依赖的文件，运行`npm run dev` 命令以确保重新编译你的资源。重新编译资源后，你可以将这些组件放入应用程序的模板中，然后开始创建客户端和个人访问令牌：
+这些组件注册后，运行 `npm install`安装vue所依赖的文件，运行`npm run dev` 命令以确保重新编译你的资源。
+
+>>执行 'npm run dev'会报错，根据提示，把 \resources\js\components\下面的 passpost目录拷贝到 resources\assets\js\components下面就OK了
+
+重新编译资源后，你可以将这些组件放入应用程序的模板中，然后开始创建客户端和个人访问令牌：
 
     <passport-clients></passport-clients>
     <passport-authorized-clients></passport-authorized-clients>
     <passport-personal-access-tokens></passport-personal-access-tokens>
+
+>>到这一步，怎么弄，有点不太会了。可能没有用习惯vue,可能需要 vue的基础.有空再研究一下.尝试加到模版中去，提示Failed to mount component: template or render function not defined.found in。 出现这个提示，需要重新创建前端，在项目根目录执行 npm run prod.就不会提了。
+
+>> 在模块中命名用组件的方法：
+`@section('content')
+        <passport-clients></passport-clients>
+@endsection
+`
+>> Failed to mount component: template or render function not defined.报这个错。需要把  `require('./components/passport/PersonalAccessTokens.vue')`这行改成  `require('./components/passport/PersonalAccessTokens.vue').default`
 
 <a name="deploying-passport"></a>
 ### 部署 Passport
@@ -221,6 +238,7 @@ Passport 配备了一些可以让你的用户自行创建客户端和个人访�
             console.log(response.data);
         });
 
+>> 我想知道，这个路由的控制器在哪里，能过这个方法 可以把路由的信息输出到一个文本文件`php artisan route:list > routes.txt`. 模块的路由，在哪里定义？ 
 #### `POST /oauth/clients`
 
 此路由用于创建新客户端。它需要两部分数据：客户端的 `name` 和 `redirect` 的链接。在批准或拒绝授权请求后，用户会被重定向 `redirect` 到这个链接。
@@ -409,6 +427,8 @@ OAuth2 密码授权机制可以让你自己的客户端（如移动应用程序�
         Passport::enableImplicitGrant();
     }
 
+> 在修改文件在`app/Providers/AuthServiceProvider.php`
+
 调用上面方法开启授权后，开发者可以使用他们的客户端 ID 从应用程序请求访问令牌。接入的应用程序应该向你的应用程序的 `/oauth/authorize` 路由发出重定向请求，如下所示：
 
 
@@ -425,6 +445,9 @@ OAuth2 密码授权机制可以让你自己的客户端（如移动应用程序�
 
 
 > {tip} `/oauth/authorize` 路由在 `Passport::routes` 定义中，所以无需再次手动定义此路由。
+
+
+>试验报错 `"error":"unsupported_grant_type","error_description":"The authorization grant type is not supported by the authorization server."`
 
 <a name="client-credentials-grant-tokens"></a>
 
