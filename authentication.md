@@ -102,6 +102,8 @@ Laravel 默认使用 `email` 字段来认证。如果你想用其他字段认证
     {
         return Auth::guard('guard-name');
     }
+> 如何实现"guard-name"这个看守器?
+> 为什么需要自定义看守器？
 
 #### 自定义验证／存储
 
